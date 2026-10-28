@@ -33,25 +33,11 @@ on:
         name: Plan selected environment
         needs: validate
         runs-on: ubuntu-latest
-        permission:
-          contents: read
-          id-token: write
         steps:
           - uses: actions/checkout@v4
           - uses: hashicorp/setup-terraform@v3
             with:
               terraform_version: "1.10.5"
           - uses: aws-actions/configure-aws-credentials@v4
-            with:
-              aws-region: us-east-1
-          - name: Initialize selected backend
-            env:
-              TF_ENV: dev
             run:
-              terraform init -input=false \
-                -backend-config="bucket=training-activity7-20261028" \
-                -backend-config="key=activity7/${TF_ENV}/terraformstate.tfstate" \
-                -backend-config="region=us-east-1" \
-                -backend-config="use_lockfile=true"
-            
-      
+              terraform init 
