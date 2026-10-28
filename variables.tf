@@ -1,11 +1,11 @@
 variable "aws_region" {
-  description = "AWS region for deployment"
+  description = "AWS region for deployment."
   type        = string
   default     = "us-east-1"
 }
 
 variable "environment" {
-  description = "Environment identifier"
+  description = "Environment identifier."
   type        = string
   validation {
     condition     = contains(["dev", "prod"], var.environment)
@@ -22,5 +22,5 @@ variable "instance_type" {
 variable "project" {
   description = "Project name used for resource naming."
   type        = string
-  default     = "activity7"
+  default     = "activity5"
 }

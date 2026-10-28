@@ -1,4 +1,4 @@
 aws_region    = "us-east-1"
 environment   = "dev"
-instance_type = "t2.nano"
-project       = "activity7-dev"
+instance_type = "t3.nano"
+project       = "activity5"

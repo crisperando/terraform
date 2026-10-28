@@ -1,3 +1,10 @@
 **/.terraform/*
 *.tfstate
 *.tfstate.*
+*.tfplan
+*.tfvars
+!environments/*.tfvars
+crash.log
+*.tfbackend
+!environments/*.tfbackend.example
+.DS_Store
