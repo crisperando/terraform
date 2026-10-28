@@ -60,6 +60,6 @@ on:
                 -backend-config="bucket=${TF_STATE_BUCKET}" \
                 -backend-config="key=activity7/${TF_ENV}/terraformstate.tfstate" \
                 -backend-config="region=${TF_STATE_REGION}" \
-                -backend-config="use_lockfile=true" \
+                -backend-config="use_lockfile=true"
             
       
