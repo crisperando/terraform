@@ -1,0 +1,65 @@
+name: Terraform CI and Deploy
+
+on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - ".github/workflows/terraform.yml"
+    workflow_dispatch:
+      inputs:
+        environment:
+          descriptions: "Target environment"
+          required: true
+          type: choice
+          options: [dev,prod]
+    
+    permissions:
+      contents: read
+
+    concurrency:
+      group: terraform-${{github.even_name == 'workflow_dispatch' && inputs.environments || 'validation'}}
+      cancel-in-progress: false
+    
+    jobs:
+      validate:
+        name: Format and validate
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: hashicorp/setup-terraform@v3
+            with:
+              terraform_version: "1.10.5"
+          - run: terraform fmt -check -recursive
+          - run: terraform init -backend=false
+          - run: terraform validate
+      
+      plan:
+        name: Plan selected environment
+        if: github.event_name == 'workflow_dispatch'
+        needs: validate
+        runs-on: ubuntu-latest
+        permission:
+          contents: read
+          id-token: write
+        steps:
+          - uses: actions/checkout@v4
+          - uses: hashicorp/setup-terraform@v3
+            with:
+              terraform_version: "1.10.5"
+          - uses: aws-actions/configure-aws-credentials@v4
+            with:
+              role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+              aws-region: ${{ vars.AWS_REGION }}
+          - name: Initialize selected backend
+            env:
+              TF_ENV: ${{ input.environment }}
+              TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+              TF_STATE_REGION: ${{ vars.AWS_REGION }}
+            run:
+              terraform init -input=false \
+                -backend-config="bucket=${TF_STATE_BUCKET}" \
+                -backend-config="key=activity7/${TF_ENV}/terraformstate.tfstate" \
+                -backend-config="region=${TF_STATE_REGION}" \
+                -backend-config="use_lockfile=true"
+            
+      
