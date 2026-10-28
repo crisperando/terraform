@@ -1,19 +1,18 @@
 resource "aws_security_group" "training" {
-  name_prefix = "${var.project}-${var.environment}"
-  description = "Activity 7 instance - no inbound"
+  name_prefix = "${var.project}-${var.environment}-"
+  description = "Activity 5 training instance: no inbound access"
   vpc_id      = var.vpc_id
 
+  # No ingress rules: inbound connections are blocked.
   egress {
     description = "Outbound access for package repositories"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks  = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "${var.project}-${var.environment}"
-  }
+  tags = { Name = "${var.project}-${var.environment}-sg" }
 }
 
 resource "aws_instance" "training" {
@@ -33,7 +32,5 @@ resource "aws_instance" "training" {
     encrypted   = true
   }
 
-  tags = {
-    Name = "${var.project}-${var.environment}"
-  }
+  tags = { Name = "${var.project}-${var.environment}-ec2" }
 }

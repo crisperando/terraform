@@ -1,5 +1,5 @@
 output "instance_id" {
-  description = "ID of EC2 instance"
+  description = "ID of the created training EC2 instance."
   value       = module.ec2.instance_id
 }
 

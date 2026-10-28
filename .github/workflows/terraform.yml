@@ -17,11 +17,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: "terraform-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'validation' }}"
+  group: terraform-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'validation' }}
   cancel-in-progress: false
 
 jobs:
   validate:
+    name: Format and validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
   plan:
     name: Plan selected environment
     if: github.event_name == 'workflow_dispatch'
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,12 +53,59 @@ jobs:
       - name: Initialize selected backend
         env:
           TF_ENV: ${{ inputs.environment }}
-          TF_VAR_environment: ${{ inputs.environment }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_STATE_REGION: ${{ vars.AWS_REGION }}
         run: |
           terraform init -input=false \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
-            -backend-config="key=Activity7/${TF_ENV}/terraform.tfstate" \
+            -backend-config="key=activity5/${TF_ENV}/terraform.tfstate" \
             -backend-config="region=${TF_STATE_REGION}" \
             -backend-config="use_lockfile=true"
+      - name: Create saved plan
+        env:
+          TF_ENV: ${{ inputs.environment }}
+        run: terraform plan -input=false -var-file="environments/${TF_ENV}.tfvars" -out=tfplan
+      - name: Display plan
+        run: terraform show -no-color tfplan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}-${{ github.run_id }}
+          path: tfplan
+          retention-days: 1
+
+  apply:
+    name: Approved apply
+    if: github.event_name == 'workflow_dispatch'
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Initialize selected backend
+        env:
+          TF_ENV: ${{ inputs.environment }}
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_STATE_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=activity5/${TF_ENV}/terraform.tfstate" \
+            -backend-config="region=${TF_STATE_REGION}" \
+            -backend-config="use_lockfile=true"
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}-${{ github.run_id }}
+      - name: Apply exact approved plan
+        run: terraform apply -input=false -auto-approve tfplan
+      - name: Show outputs
+        run: terraform output
