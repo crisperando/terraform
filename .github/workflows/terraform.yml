@@ -17,7 +17,7 @@ on:
       contents: read
 
     concurrency:
-      group: terraform-${{github.even_name == 'workflow_dispatch' && inputs.environments || 'validation'}}
+      group: terraform-${{ github.event_name == 'workflow_dispatch' && inputs.environments || 'validation' }}
       cancel-in-progress: false
     
     jobs:
