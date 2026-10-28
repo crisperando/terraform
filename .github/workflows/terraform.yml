@@ -15,10 +15,6 @@ on:
     
     permissions:
       contents: read
-
-    concurrency:
-      group: terraform-${{github.even_name == 'workflow_dispatch' && inputs.environments || 'validation'}}
-      cancel-in-progress: false
     
     jobs:
       validate:
@@ -35,7 +31,6 @@ on:
       
       plan:
         name: Plan selected environment
-        if: github.event_name == 'workflow_dispatch'
         needs: validate
         runs-on: ubuntu-latest
         permission:
